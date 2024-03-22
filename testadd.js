@@ -1,140 +1,105 @@
-const { MongoClient } = require("mongodb");
-
-// The uri string must be the connection string for the database (obtained on Atlas).
-const uri ="mongodb+srv://keyronsmith:ColetrainCTP@cluster0.3hmtsyu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-// --- This is the standard stuff to get it to work on the browser
 const express = require('express');
+const cookieParser = require('cookie-parser');
+const { MongoClient } = require('mongodb');
+
 const app = express();
 const port = 3000;
-app.listen(port);
-console.log('Server started at http://localhost:' + port);
+
+// MongoDB connection URI
+const uri = 'mongodb+srv://username:password@your-cluster.mongodb.net/your-database';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// routes will go here
+// MongoDB client initialization
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-// Default route.
-// Provides a selection of routes to go to as links.
-app.get('/', function(req, res) {
-  var outstring = 'Default endpoint starting on date: ' + Date.now();
-  outstring += '<p><a href=\"./task1\">Go Pack go </a>';
-  outstring += '<p><a href=\"./task2\"> 415 is borning </a>';
-  res.send(outstring);
+// Connect to MongoDB
+client.connect(err => {
+    if (err) {
+        console.error('Failed to connect to MongoDB:', err);
+        return;
+    }
+    console.log('Connected to MongoDB');
 });
 
-app.get('/task1', function(req, res) {
-  var outstring = 'Starting Task 1 on date: ' + Date.now();
-  res.send(outstring);
+// Default endpoint
+app.get('/', (req, res) => {
+    if (req.cookies.authCookie) {
+        res.send(`Authentication cookie exists with value: ${req.cookies.authCookie}`);
+    } else {
+        res.send(`
+            <h2>Login or Register</h2>
+            <a href="/login">Login</a> | <a href="/register">Register</a>
+        `);
+    }
 });
 
-app.get('/task2', function(req, res) {
-  var outstring = 'Starting Task 2 on date: ' + Date.now();
-  res.send(outstring);
+// Registration form
+app.get('/register', (req, res) => {
+    res.send(`
+        <h2>Register</h2>
+        <form action="/register" method="post">
+            <input type="text" name="userId" placeholder="User ID" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <button type="submit">Register</button>
+        </form>
+    `);
 });
 
-app.get('/say/:name', function(req, res) {
-  res.send('Hello ' + req.params.name + '!');
+// Registration endpoint
+app.post('/register', async (req, res) => {
+    const { userId, password } = req.body;
+    const usersCollection = client.db('your-database').collection('users');
+
+    try {
+        await usersCollection.insertOne({ userId, password });
+        res.send('Registration successful!');
+    } catch (error) {
+        console.error('Error during registration:', error);
+        res.status(500).send('Registration failed');
+    }
 });
 
-
-// Access Example-1
-// Route to access database using a parameter:
-// access as ...app.github.dev/api/mongo/9876
-app.get('/api/mongo/:item', function(req, res) {
-const client = new MongoClient(uri);
-
-async function run() {
-  try {
-    const database = client.db('415DBexample');
-    const Users = database.collection('user ID/ Password and registration');
-
-    // Here we make a search query where the key is hardwired to 'partID' 
-    // and the value is picked from the input parameter that comes in the route
-     const query = { UserID: req.params.item };
-     console.log("Looking for: " + query);
-
-    const User = await Users.findOne(query);
-    console.log(User);
-    res.send('Found this: ' + JSON.stringify(User));  //Use stringify to print a json
-
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+// Login form
+app.get('/login', (req, res) => {
+    res.send(`
+        <h2>Login</h2>
+        <form action="/login" method="post">
+            <input type="text" name="userId" placeholder="User ID" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <button type="submit">Login</button>
+        </form>
+    `);
 });
 
+// Login endpoint
+app.post('/login', async (req, res) => {
+    const { userId, password } = req.body;
+    const usersCollection = client.db('your-database').collection('users');
 
-// Access Example-2
-// Route to access database using two parameters:
-app.get('/api/mongo2/:inpkey&:item', function(req, res) {
-// access as ...app.github.dev/api/mongo2/partID&12345
-console.log("inpkey: " + req.params.inpkey + " item: " + req.params.item);
-
-const client = new MongoClient(uri);
-
-async function run() {
-  try {
-    const database = client.db('415DBexample');
-    const where2look = database.collection('user ID/ Password and registration');
-
-    // Here we will make a query object using the parameters provided with the route
-    // as they key:value pairs
-    const query = {};
-    query[req.params.inpkey]= req.params.item;
-
-    console.log("Looking for: " + JSON.stringify(query));
-
-    const User = await where2look.findOne(query);
-    console.log('Found this entry: ', User);
-    res.send('Found this: ' + JSON.stringify(User));  //Use stringify to print a json
-
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+    const user = await usersCollection.findOne({ userId, password });
+    if (user) {
+        res.cookie('authCookie', userId, { maxAge: 60000 }); // Set authentication cookie for 1 minute
+        res.send('Login successful!');
+    } else {
+        res.send('Invalid credentials. <a href="/">Go back</a>');
+    }
 });
 
-
-// Route to write to the database:
-// Access like this:  https://.....app.github.dev/api/mongowrite/partID&54321
-// References:
-// https://www.mongodb.com/docs/drivers/node/current/usage-examples/insertOne
-// https://www.mongodb.com/docs/drivers/node/current/usage-examples/insertMany
-
-app.get('/api/mongowrite/:inpkey&:inpval', function(req, res) {
-console.log("PARAMS: inpkey: " + req.params.inpkey + " inpval: " + req.params.inpval);
-
-const client = new MongoClient(uri);
-
-// The following is the document to insert (made up with input parameters) :
-// First I make a document object using static fields
-const doc2insert = { 
-  name: 'Cris', 
-  Description: 'This is a test', };
-// Additional fields using inputs:
-  doc2insert[req.params.inpkey]=req.params.inpval;
-
-console.log("Adding: " + doc2insert);
-
-async function run() {
-  try {
-    const database = client.db('415DBexample');
-    const where2put = database.collection('user ID/ Password and registration');
-
-    const doit = await where2put.insertOne(doc2insert);
-    console.log(doit);
-    res.send('Got this: ' + JSON.stringify(doit));  //Use stringify to print a json
-
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+// Endpoint to report active cookies
+app.get('/cookies', (req, res) => {
+    res.send(`Active cookies: ${JSON.stringify(req.cookies)}`);
 });
+
+// Endpoint to clear cookies
+app.get('/clear-cookies', (req, res) => {
+    res.clearCookie('authCookie');
+    res.send('Cookies cleared. <a href="/">Go back</a>');
+});
+
+app.listen(port, () => {
+    console.log(`Server started at http://localhost:${port}`);
+});
+

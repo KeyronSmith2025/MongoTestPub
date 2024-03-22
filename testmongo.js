@@ -7,50 +7,69 @@ const uri = "mongodb+srv://keyronsmith:ColetrainCTP@cluster0.3hmtsyu.mongodb.net
 const express = require('express');
 const app = express();
 const port = 3000;
-app.listen(port);
-console.log('Server started at http://localhost:' + port);
+app.listen(port, () => {
+    console.log(`Server started at http://localhost:${port}`);
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// routes will go here
+// MongoDB client initialization
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+// Connect to MongoDB
+client.connect(err => {
+    if (err) {
+        console.error('Failed to connect to MongoDB:', err);
+        return;
+    }
+    console.log('Connected to MongoDB');
+});
 
 // Default route:
 app.get('/', function(req, res) {
-  const myquery = req.query;
-  var outstring = 'Starting... ';
-  res.send(outstring);
+    res.send('Starting...');
 });
 
 app.get('/say/:name', function(req, res) {
-  res.send('Hello ' + req.params.name + '!');
+    res.send('Hello ' + req.params.name + '!');
 });
-
 
 // Route to access database:
 app.get('/api/mongo/:item', function(req, res) {
-const client = new MongoClient(uri);
-const searchKey = "{ UserID: '" + req.params.item + "' }";
-console.log("Looking for: " + searchKey);
+    const searchKey = req.params.item; // No need to wrap in string and single quotes
+    console.log("Looking for: " + searchKey);
 
-async function run() {
-  try {
     const database = client.db('415DBexample');
     const Users = database.collection('user ID/ Password and registration');
 
-    // Hardwired Query for a part that has partID '12345'
-    // const query = { partID: '12345' };
-    // But we will use the parameter provided with the route
-    const query = { UserID: req.params.item };
+    const query = { UserID: searchKey }; // Query based on the parameter value
 
-    const User = await Users.findOne(query);
-    console.log(UserID);
-    res.send('Found this: ' + JSON.stringify(UserID));  //Use stringify to print a json
-
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
-run().catch(console.dir);
+    Users.findOne(query)
+        .then(User => {
+            if (User) {
+                console.log(User);
+                res.send('Found this: ' + JSON.stringify(User));
+            } else {
+                res.send('User not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            res.status(500).send('An error occurred');
+        });
 });
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something went wrong!');
+});
+
+// Close MongoDB client when the app is terminated
+process.on('SIGINT', () => {
+    client.close();
+    console.log('MongoDB connection closed');
+    process.exit(0);
+});
+
