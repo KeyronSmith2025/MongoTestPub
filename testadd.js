@@ -6,7 +6,7 @@ const app = express();
 const port = 3000;
 
 // MongoDB connection URI
-const uri = 'mongodb+srv://username:password@your-cluster.mongodb.net/your-database';
+const uri = "mongodb+srv://keyronsmith:ColetrainCTP@cluster0.3hmtsyu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -50,11 +50,11 @@ app.get('/register', (req, res) => {
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-    const { userId, password } = req.body;
-    const usersCollection = client.db('your-database').collection('users');
+    const { UserId, UserPass } = req.body;
+    const usersCollection = client.db('415DBexample').collection('user ID/ Password and registration');
 
     try {
-        await usersCollection.insertOne({ userId, password });
+        await usersCollection.insertOne({ UserId, UserPass });
         res.send('Registration successful!');
     } catch (error) {
         console.error('Error during registration:', error);
@@ -76,12 +76,12 @@ app.get('/login', (req, res) => {
 
 // Login endpoint
 app.post('/login', async (req, res) => {
-    const { userId, password } = req.body;
-    const usersCollection = client.db('your-database').collection('users');
+    const { UserId, UserPass } = req.body;
+    const usersCollection = client.db('415DBexample').collection('user ID/ Password and registration');
 
-    const user = await usersCollection.findOne({ userId, password });
+    const user = await usersCollection.findOne({ UserId, UserPass });
     if (user) {
-        res.cookie('authCookie', userId, { maxAge: 60000 }); // Set authentication cookie for 1 minute
+        res.cookie('authCookie', UserId, { maxAge: 60000 }); // Set authentication cookie for 1 minute
         res.send('Login successful!');
     } else {
         res.send('Invalid credentials. <a href="/">Go back</a>');
