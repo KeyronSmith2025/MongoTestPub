@@ -41,7 +41,7 @@ app.get('/register', (req, res) => {
     res.send(`
         <h2>Register</h2>
         <form action="/register" method="post">
-            <input type="text" name="UserId" placeholder="User ID" required><br>
+            <input type="text" name="UserID" placeholder="User ID" required><br>
             <input type="password" name="UserPass" placeholder="Password" required><br>
             <button type="submit">Register</button>
         </form>
@@ -50,11 +50,11 @@ app.get('/register', (req, res) => {
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-    const { UserId, UserPass } = req.body;
+    const { UserID, UserPass } = req.body;
     const usersCollection = client.db('415DBexample').collection('user ID/ Password and registration');
 
     try {
-        await usersCollection.insertOne({ UserId, UserPass });
+        await usersCollection.insertOne({ UserID, UserPass });
         res.send('Registration successful!');
     } catch (error) {
         console.error('Error during registration:', error);
@@ -76,12 +76,12 @@ app.get('/login', (req, res) => {
 
 // Login endpoint
 app.post('/login', async (req, res) => {
-    const { UserId, UserPass } = req.body;
+    const { UserID, UserPass } = req.body;
     const usersCollection = client.db('415DBexample').collection('user ID/ Password and registration');
 
-    const user = await usersCollection.findOne({ UserId, UserPass });
+    const user = await usersCollection.findOne({ UserID, UserPass });
     if (user) {
-        res.cookie('authCookie', UserId, { maxAge: 60000 }); // Set authentication cookie for 1 minute
+        res.cookie('authCookie', UserID, { maxAge: 60000 }); // Set authentication cookie for 1 minute
         res.send('Login successful!');
     } else {
         res.send('Invalid credentials. <a href="/">Go back</a>');
