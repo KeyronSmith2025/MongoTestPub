@@ -6,7 +6,7 @@ const app = express();
 const port = 3000;
 
 // MongoDB connection URI
-const uri = "mongodb+srv://keyronsmith:ColetrainCTP@cluster0.3hmtsyu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = "mongodb+srv://keyronsmith:ColetrainCTP@cluster0.3hmtsyu.mongodb.net/415DBexample/user ID/ Password and registration?retryWrites=true&w=majority&appName=Cluster0";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
