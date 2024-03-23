@@ -27,7 +27,7 @@ client.connect(err => {
 // Default endpoint
 app.get('/', (req, res) => {
     if (req.cookies.authCookie) {
-        res.send(`Authentication cookie exists with value: ${req.cookies.authCookie}`);
+        res.send(`Authentication cookie exists with value: ${req.cookies.authCookie}<br><a href="/cookies">View Active Cookies</a> | <a href="/clear-cookies">Clear Cookie</a>`);
     } else {
         res.send(`
             <h2>Login or Register</h2>
@@ -82,7 +82,7 @@ app.post('/login', async (req, res) => {
     const user = await usersCollection.findOne({ UserID, UserPass });
     if (user) {
         res.cookie('authCookie', UserID, { maxAge: 60000 }); // Set authentication cookie for 1 minute
-        res.send('Login successful!');
+        res.send('Login successful!<br><a href="/cookies">View Active Cookies</a> | <a href="/clear-cookies">Clear Cookie</a>');
     } else {
         res.send('Invalid credentials. <a href="/">Go back</a>');
     }
@@ -90,7 +90,7 @@ app.post('/login', async (req, res) => {
 
 // Endpoint to report active cookies
 app.get('/cookies', (req, res) => {
-    res.send(`Active cookies: ${JSON.stringify(req.cookies)}`);
+    res.send(`Active cookies: ${JSON.stringify(req.cookies)}<br><a href="/">Go back</a>`);
 });
 
 // Endpoint to clear cookies
@@ -102,4 +102,3 @@ app.get('/clear-cookies', (req, res) => {
 app.listen(port, () => {
     console.log(`Server started at http://localhost:${port}`);
 });
-
